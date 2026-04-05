@@ -6,6 +6,7 @@ colorTo: yellow
 sdk: gradio
 sdk_version: "4.31.0"
 app_file: main.py
+python_version: 3.10
 pinned: false
 tags:
   - openenv
