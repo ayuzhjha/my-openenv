@@ -59,15 +59,7 @@ class StateRequest(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
-@app.get("/")
-async def root():
-    return {
-        "name": "SRE OpenEnv",
-        "version": "1.0.0",
-        "description": "AI SRE incident response environment",
-        "tasks": ["easy", "medium", "hard"],
-        "endpoints": ["/reset", "/step", "/state", "/health", "/docs"],
-    }
+# Root moved to main.py for Gradio redirect
 
 
 @app.get("/health")
