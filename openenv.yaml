@@ -1,0 +1,175 @@
+name: sre-env
+version: 1.0.0
+description: >
+  SRE (Site Reliability Engineering) incident response simulation environment.
+  An AI agent diagnoses and resolves real-world backend failure scenarios through
+  iterative investigation and corrective actions on a simulated Linux server.
+
+author: openenv-hackathon
+tags:
+  - openenv
+  - sre
+  - devops
+  - incident-response
+  - real-world
+
+# OpenEnv spec compliance
+spec_version: "1.0"
+
+observation_space:
+  type: object
+  description: >
+    Limited view of the server state — agent must investigate to discover full picture.
+  properties:
+    task_id:
+      type: string
+      description: Current task identifier
+    task_description:
+      type: string
+      description: Human-readable task description
+    service_statuses:
+      type: object
+      description: Map of service name → status (running/crashed/overloaded/etc.)
+    recent_logs:
+      type: array
+      items:
+        type: string
+      description: Last 10 system log lines
+    last_action_result:
+      type: string
+      description: Output/result of the previous action
+    step_number:
+      type: integer
+      description: Current step number in episode
+    files_visible:
+      type: array
+      items:
+        type: string
+      description: File paths available to read (paths only, not contents)
+    hint:
+      type: string
+      nullable: true
+      description: Contextual hint every 5 steps
+
+action_space:
+  type: string
+  description: >
+    Free-form action string parsed by the environment. One action per step.
+  examples:
+    - "READ_FILE /etc/nginx/nginx.conf"
+    - "LIST_DIR /var/log"
+    - "EDIT_CONFIG backend.env PORT=8080"
+    - "RESTART_SERVICE backend"
+    - "RUN_SHELL netstat -tlnp"
+    - "CHECK_SERVICE nginx"
+    - "VIEW_LOGS all"
+
+reward_space:
+  type: number
+  minimum: -1.0
+  maximum: 1.0
+  description: >
+    Continuous reward signal reflecting progress toward task resolution.
+    Rewards: +0.2 relevant file discovery, +0.3 correct config edit,
+             +0.5 task completion bonus, +0.1 service restart.
+    Penalties: -0.1 useless/repeated actions, -0.5 wrong config,
+               -1.0 destructive action (stopping healthy service).
+
+tasks:
+  - id: task_easy
+    name: "Wrong Port Configuration"
+    difficulty: easy
+    max_steps: 15
+    description: >
+      Backend service crashed due to misconfigured PORT environment variable.
+      Nginx expects upstream on port 8080 but backend is bound to 5000.
+      Requires: read config → identify wrong PORT → edit → restart service.
+    success_criteria: >
+      backend.env has PORT=8080 AND backend service is running.
+    expected_score_range: [0.7, 1.0]
+
+  - id: task_medium
+    name: "Double-Layer API Failure"
+    difficulty: medium
+    max_steps: 20
+    description: >
+      API service crashed. Two independent issues: wrong DB hostname
+      (db-old.internal decommissioned) AND missing SECRET_KEY env var.
+      Both must be fixed. Logs point clearly to error types but not locations.
+    success_criteria: >
+      DB_HOST=db.internal AND SECRET_KEY is set (non-empty) in /app/api.env
+      AND api service is running.
+    expected_score_range: [0.4, 0.85]
+
+  - id: task_hard
+    name: "Payment System Cascade Failure"
+    difficulty: hard
+    max_steps: 30
+    description: >
+      Payment service down — high business impact. Three independent root causes:
+      1) SSL certificate expired (new cert available), 2) Stripe API endpoint
+      deprecated (v1→v2), 3) MAX_RETRIES=0 causes infinite retry loop in worker.
+      Initial logs misleadingly suggest DB issues. Multi-step reasoning required.
+    success_criteria: >
+      SSL_CERT_PATH updated to new cert, PAYMENT_GW_URL updated to v2,
+      MAX_RETRIES >= 1, both payment and worker services running.
+    expected_score_range: [0.2, 0.7]
+
+# Endpoints (OpenEnv spec)
+endpoints:
+  reset:
+    method: POST
+    path: /reset
+    description: Initialize a new episode session
+    request:
+      task_id:
+        type: string
+        enum: [easy, medium, hard]
+      session_id:
+        type: string
+        nullable: true
+    response:
+      session_id: string
+      observation: object
+      task_description: string
+      max_steps: integer
+
+  step:
+    method: POST
+    path: /step
+    description: Execute one action in the environment
+    request:
+      session_id: string
+      action: string
+    response:
+      observation: object
+      reward: object
+      done: boolean
+      info: object
+
+  state:
+    method: GET
+    path: /state
+    description: Return full internal state (for debugging)
+    params:
+      session_id: string
+    response:
+      state: object
+      score: number
+
+# Docker
+docker:
+  build_context: "."
+  dockerfile: "Dockerfile"
+  port: 7860
+
+# HF Space metadata
+hf_space:
+  sdk: gradio
+  sdk_version: "4.0"
+  app_file: main.py
+  tags:
+    - openenv
+    - sre
+    - ai-agent
+    - reinforcement-learning
