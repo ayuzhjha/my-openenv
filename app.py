@@ -72,19 +72,19 @@ def take_action(
     session_id: str,
     action_input: str,
     history_log: str,
-) -> Tuple[str, str, str, str, str]:
+) -> Tuple[str, str, str, str, str, str]:
     """Execute an action and update UI."""
     if not session_id:
-        return history_log, "⚠️ Start a task first", "", "", "Score: ?"
+        return history_log, "⚠️ Start a task first", "", "", "Score: ?", ""
 
     action = action_input.strip()
     if not action:
-        return history_log, "⚠️ Enter an action", "", "", "Score: ?"
+        return history_log, "⚠️ Enter an action", "", "", "Score: ?", ""
 
     try:
         resp = api_step(session_id, action)
     except Exception as e:
-        return history_log, f"❌ Error: {e}", "", "", "Score: ?"
+        return history_log, f"❌ Error: {e}", "", "", "Score: ?", ""
 
     obs = resp["observation"]
     reward = resp["reward"]
@@ -112,6 +112,7 @@ def take_action(
         for k, v in obs["service_statuses"].items()
     )
 
+    files_text = "\n".join(obs.get("files_visible", [])[:15])
     logs_text = "\n".join(obs["recent_logs"][-10:])
     score_text = f"Score: {reward.get('cumulative', 0.0):.3f}"
 
@@ -119,26 +120,32 @@ def take_action(
     if hint:
         logs_text += f"\n\n💡 {hint}"
 
-    return updated_log, services_text, logs_text, score_text, ""
+    return updated_log, services_text, logs_text, files_text, score_text, ""
 
 
 # ── Gradio layout ─────────────────────────────────────────────────────────────
 
-with gr.Blocks(
-    title="SRE OpenEnv — AI Incident Response",
-    theme=gr.themes.Base(
-        primary_hue="red",
-        secondary_hue="orange",
-        neutral_hue="slate",
-        font=[gr.themes.GoogleFont("JetBrains Mono"), "monospace"],
-    ),
-    css="""
-        .header-text { font-family: 'JetBrains Mono', monospace; }
-        .score-display { font-size: 1.5em; font-weight: bold; }
-        .terminal-box textarea { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-        #action-row { border: 2px solid #ef4444; border-radius: 8px; padding: 4px; }
-    """,
-) as demo:
+GRADIO_THEME = gr.themes.Base(
+    primary_hue="red",
+    secondary_hue="orange",
+    neutral_hue="slate",
+    font=[gr.themes.GoogleFont("JetBrains Mono"), "monospace"],
+)
+
+GRADIO_CSS = """
+    .header-text { font-family: 'JetBrains Mono', monospace; }
+    .score-display { font-size: 1.5em; font-weight: bold; }
+    .terminal-box textarea { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    #action-row { border: 2px solid #ef4444; border-radius: 8px; padding: 4px; }
+"""
+
+# Support both Gradio 4.x (theme/css in Blocks) and 6.x (theme/css in launch)
+try:
+    demo = gr.Blocks(title="SRE OpenEnv — AI Incident Response", theme=GRADIO_THEME, css=GRADIO_CSS)
+except TypeError:
+    demo = gr.Blocks(title="SRE OpenEnv — AI Incident Response")
+
+with demo:
 
     session_state = gr.State("")
 
@@ -234,16 +241,16 @@ with gr.Blocks(
     submit_btn.click(
         fn=take_action,
         inputs=[session_state, action_input, history_box],
-        outputs=[history_box, services_box, logs_box, score_display, action_input],
+        outputs=[history_box, services_box, logs_box, files_box, score_display, action_input],
     )
 
     action_input.submit(
         fn=take_action,
         inputs=[session_state, action_input, history_box],
-        outputs=[history_box, services_box, logs_box, score_display, action_input],
+        outputs=[history_box, services_box, logs_box, files_box, score_display, action_input],
     )
 
 
 if __name__ == "__main__":
     # Standalone Gradio mode (for testing)
-    demo.launch(server_port=7861)
+    demo.launch(server_port=7861, theme=GRADIO_THEME, css=GRADIO_CSS)
