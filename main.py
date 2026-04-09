@@ -15,11 +15,7 @@ def create_app():
     from server import app as api_app
     from app import demo as gradio_demo
 
-    combined = gr.mount_gradio_app(api_app, gradio_demo, path="/ui")
-
-    @combined.get("/", include_in_schema=False)
-    async def _root():
-        return RedirectResponse(url="/ui")
+    combined = gr.mount_gradio_app(api_app, gradio_demo, path="/")
 
     return combined
 
