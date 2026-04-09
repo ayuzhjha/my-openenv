@@ -20,11 +20,14 @@ import requests
 from openai import OpenAI
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
-API_KEY = os.environ.get("HF_TOKEN", os.environ.get("OPENAI_API_KEY", "dummy"))
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-SERVER_URL = os.environ.get("SERVER_URL", "http://localhost:7860")
+# Optional - if you use from_docker_image():
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
+
+SERVER_URL = os.getenv("SERVER_URL", "http://localhost:7860")
 
 MAX_STEPS_PER_TASK = 20
 TEMPERATURE = 0.0
@@ -266,7 +269,7 @@ def main():
         sys.exit(1)
 
     # Initialize OpenAI client
-    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
     # Run all tasks
     all_results = []
