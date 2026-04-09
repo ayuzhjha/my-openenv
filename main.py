@@ -8,14 +8,22 @@ from __future__ import annotations
 import os
 import uvicorn
 import gradio as gr
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse
 
 
 def create_app():
     from server import app as api_app
     from app import demo as gradio_demo
 
-    combined = gr.mount_gradio_app(api_app, gradio_demo, path="/")
+    combined = gr.mount_gradio_app(api_app, gradio_demo, path="/ui")
+
+    @combined.get("/", include_in_schema=False)
+    async def _root():
+        # Reliable redirect that works inside HF Space iframes
+        return HTMLResponse('<meta http-equiv="refresh" content="0; url=./ui" />')
+
+    return combined
+
 
 def run():
     port = int(os.environ.get("PORT", 7860))
