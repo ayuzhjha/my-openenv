@@ -221,7 +221,3 @@ sre-openenv/
 - ✅ Baseline inference script
 
 ---
-
-## 📄 License
-
-MIT License — see LICENSE for details.
