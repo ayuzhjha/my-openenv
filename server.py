@@ -68,8 +68,11 @@ async def health():
 
 
 @app.post("/reset")
-async def reset(req: ResetRequest) -> Dict[str, Any]:
+async def reset(req: Optional[ResetRequest] = None) -> Dict[str, Any]:
     """Initialize or reset an environment session."""
+    if req is None:
+        req = ResetRequest()
+    
     session_id = req.session_id or str(uuid.uuid4())
 
     env = SREEnvironment(task_id=req.task_id)
