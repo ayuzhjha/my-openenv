@@ -20,7 +20,7 @@ def create_app():
     @combined.get("/", include_in_schema=False)
     async def _root():
         # Reliable redirect that works inside HF Space iframes
-        return HTMLResponse('<meta http-equiv="refresh" content="0; url=./ui" />')
+        return HTMLResponse('<meta http-equiv="refresh" content="0; url=./ui/" />')
 
     return combined
 
