@@ -36,7 +36,7 @@ def api_score(session_id: str) -> float:
 
 def start_task(task_choice: str) -> Tuple[str, str, str, str, str, str]:
     """Reset the environment and return initial UI state."""
-    task_map = {"🟢 Easy — Wrong Port": "easy", "🟡 Medium — Double Failure": "medium", "🔴 Hard — Cascade Incident": "hard", "🔵 Custom — Disk Full": "custom"}
+    task_map = {"🟢 Easy — Wrong Port": "easy", "🟡 Medium — Double Failure": "medium", "🔴 Hard — Cascade Incident": "hard"}
     task_id = task_map.get(task_choice, "easy")
 
     try:
@@ -166,7 +166,6 @@ with demo:
                     "🟢 Easy — Wrong Port",
                     "🟡 Medium — Double Failure",
                     "🔴 Hard — Cascade Incident",
-                    "🔵 Custom — Disk Full",
                 ],
                 value="🟢 Easy — Wrong Port",
                 label="Select Task",
