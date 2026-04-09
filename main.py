@@ -17,10 +17,10 @@ def create_app():
 
     combined = gr.mount_gradio_app(api_app, gradio_demo, path="/")
 
-    return combined
-
-
-if __name__ == "__main__":
+def run():
     port = int(os.environ.get("PORT", 7860))
     print(f"SRE OpenEnv  |  UI: http://localhost:{port}/ui  |  API: http://localhost:{port}/docs")
-    uvicorn.run(create_app(), host="0.0.0.0", port=port)
+    uvicorn.run("main:create_app", factory=True, host="0.0.0.0", port=port)
+
+if __name__ == "__main__":
+    run()
