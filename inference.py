@@ -76,36 +76,15 @@ Examples of valid actions:
 # ── Logging helpers (REQUIRED FORMAT) ────────────────────────────────────────
 
 def log_start(task: str, model: str) -> None:
-    print(json.dumps({
-        "event": "START",
-        "task": task,
-        "model": model,
-        "timestamp": time.time(),
-    }), flush=True)
+    print(f"[START] task={task} model={model}", flush=True)
 
 
 def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str] = None) -> None:
-    print(json.dumps({
-        "event": "STEP",
-        "step": step,
-        "action": action,
-        "reward": reward,
-        "done": done,
-        "error": error,
-    }), flush=True)
+    print(f"[STEP] step={step} reward={reward}", flush=True)
 
 
 def log_end(task: str, success: bool, steps: int, score: float, rewards: List[float]) -> None:
-    print(json.dumps({
-        "event": "END",
-        "task": task,
-        "success": success,
-        "steps": steps,
-        "score": score,
-        "total_reward": sum(rewards),
-        "rewards": rewards,
-        "timestamp": time.time(),
-    }), flush=True)
+    print(f"[END] task={task} score={score} steps={steps}", flush=True)
 
 
 # ── API helpers ───────────────────────────────────────────────────────────────
@@ -290,12 +269,7 @@ def main():
     print("="*60, flush=True)
 
     # Emit final summary as structured log
-    print(json.dumps({
-        "event": "SUMMARY",
-        "tasks": all_results,
-        "average_score": avg_score,
-        "timestamp": time.time(),
-    }), flush=True)
+    print(f"[SUMMARY] average_score={avg_score}", flush=True)
 
 
 if __name__ == "__main__":
