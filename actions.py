@@ -1,7 +1,4 @@
-"""
-actions.py - Structured action system for SRE OpenEnv
-Defines all possible actions an agent can take on the simulated server.
-"""
+# Action parser and execution engine for translating string actions to state changes.
 from __future__ import annotations
 import re
 from enum import Enum
@@ -106,7 +103,7 @@ def execute_action(action: ParsedAction, state: Dict[str, Any]) -> Tuple[str, fl
         )
 
 
-# ─── Action implementations ──────────────────────────────────────────────────
+# Action Implementations
 
 def _read_file(path: str, state: Dict) -> Tuple[str, float, Dict]:
     files = state.get("files", {})

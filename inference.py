@@ -1,13 +1,6 @@
-"""
-inference.py - Baseline inference script for SRE OpenEnv
-Uses OpenAI-compatible client to run an LLM agent against all 3 tasks.
-Emits structured [START] / [STEP] / [END] logs as required by evaluator.
+# Entry point for SRE simulation tests. Starts the OpenAI-compatible agent
+# against the predefined tasks and outputs strictly formatted benchmark strings.
 
-Environment variables:
-  API_BASE_URL  - LLM API base URL (default: https://api.openai.com/v1)
-  MODEL_NAME    - Model identifier (default: gpt-4o-mini)
-  HF_TOKEN      - API key (used as OpenAI API key)
-"""
 from __future__ import annotations
 
 import json
@@ -19,7 +12,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from openai import OpenAI
 
-# ── Configuration ─────────────────────────────────────────────────────────────
+# Config
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 HF_TOKEN = os.getenv("HF_TOKEN")
@@ -35,7 +28,7 @@ MAX_TOKENS = 256
 
 TASKS = ["easy", "medium", "hard"]
 
-# ── System prompt ─────────────────────────────────────────────────────────────
+# Agent Base Prompt
 SYSTEM_PROMPT = """You are an expert Site Reliability Engineer (SRE) diagnosing and fixing server incidents.
 
 You interact with a simulated Linux server environment. At each step you receive:
@@ -72,8 +65,7 @@ ACTION: CHECK_SERVICE backend
 """
 
 
-# ── Logging helpers (REQUIRED FORMAT) ────────────────────────────────────────
-
+# Evaluator tracking logs
 def log_start(task: str, model: str) -> None:
     print(f"[START] task={task} model={model}", flush=True)
 
@@ -86,8 +78,7 @@ def log_end(task: str, success: bool, steps: int, score: float, rewards: List[fl
     print(f"[END] task={task} score={score} steps={steps}", flush=True)
 
 
-# ── API helpers ───────────────────────────────────────────────────────────────
-
+# Network handlers
 def call_server(endpoint: str, payload: Dict) -> Dict:
     """Call the SRE env server."""
     url = f"{SERVER_URL}{endpoint}"
@@ -163,8 +154,7 @@ ACTION HISTORY (last 5):
         return "VIEW_LOGS all", "THOUGHT: Fallback due to error\nACTION: VIEW_LOGS all"
 
 
-# ── Main runner ───────────────────────────────────────────────────────────────
-
+# Validation Runner
 def run_task(client: OpenAI, task_id: str) -> Dict[str, Any]:
     """Run a single task and return results."""
     print(f"\n{'='*60}", flush=True)

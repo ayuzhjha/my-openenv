@@ -1,8 +1,4 @@
-"""
-server.py - FastAPI REST server for SRE OpenEnv
-Exposes /reset, /step, /state endpoints per OpenEnv spec.
-Also serves the Gradio UI.
-"""
+# Core FastAPI web server exposing validation and state endpoints.
 from __future__ import annotations
 
 import os
@@ -30,8 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Session management ────────────────────────────────────────────────────────
-# In-memory sessions (fine for demo / HF Space)
+# Session State Map
 _sessions: Dict[str, SREEnvironment] = {}
 
 
@@ -41,7 +36,7 @@ def _get_env(session_id: str) -> SREEnvironment:
     return _sessions[session_id]
 
 
-# ── Request/Response models ───────────────────────────────────────────────────
+# API Configuration Models
 
 class ResetRequest(BaseModel):
     task_id: str = "easy"
@@ -57,9 +52,7 @@ class StateRequest(BaseModel):
     session_id: str
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
-
-# Root moved to main.py for Gradio redirect
+# REST Controllers
 
 
 @app.get("/health")

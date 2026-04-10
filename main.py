@@ -1,9 +1,4 @@
-"""
-main.py - Entry point: FastAPI REST server + Gradio UI on the same port.
-  /ui   → Gradio interactive interface
-  /docs → FastAPI auto-docs
-  /reset, /step, /state, /health → OpenEnv API
-"""
+# Entry point bootstrapping the combined FastAPI and Gradio runtime.
 from __future__ import annotations
 import os
 import uvicorn

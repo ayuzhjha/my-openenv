@@ -1,8 +1,4 @@
-"""
-app.py - Gradio UI for SRE OpenEnv
-Provides an interactive interface to run the SRE environment.
-Launched alongside the FastAPI server via main.py.
-"""
+# Renders the interactive Gradio UI dashboard.
 from __future__ import annotations
 
 import json
@@ -15,7 +11,7 @@ import requests
 
 SERVER_URL = os.environ.get("SERVER_URL", "http://localhost:7860")
 
-# ── API helpers ───────────────────────────────────────────────────────────────
+# API Integration
 
 def api_reset(task_id: str) -> Dict:
     resp = requests.post(f"{SERVER_URL}/reset", json={"task_id": task_id}, timeout=10)
@@ -32,7 +28,7 @@ def api_score(session_id: str) -> float:
     return resp.json().get("score", 0.0)
 
 
-# ── UI logic ──────────────────────────────────────────────────────────────────
+# State management
 
 def start_task(task_choice: str) -> Tuple[str, str, str, str, str, str]:
     """Reset the environment and return initial UI state."""
@@ -123,7 +119,7 @@ def take_action(
     return updated_log, services_text, logs_text, files_text, score_text, ""
 
 
-# ── Gradio layout ─────────────────────────────────────────────────────────────
+# UI Components
 
 GRADIO_THEME = gr.themes.Base(
     primary_hue="red",
@@ -230,7 +226,7 @@ with demo:
 **Fix actions:** `READ_FILE <path>` · `EDIT_CONFIG <file> <key>=<val>` · `RESTART_SERVICE <name>`"""
             )
 
-    # ── Event handlers ─────────────────────────────────────────────────────────
+    # Button handlers
 
     start_btn.click(
         fn=start_task,

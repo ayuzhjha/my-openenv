@@ -1,7 +1,4 @@
-"""
-env.py - SRE OpenEnv Environment Engine
-Implements the full OpenEnv spec with typed Pydantic models.
-"""
+# Environment engine implementing the core task simulation and reward logic.
 from __future__ import annotations
 
 import copy
@@ -14,7 +11,7 @@ from actions import ParsedAction, parse_action, execute_action, ActionType
 from tasks import TASK_REGISTRY
 
 
-# ─── Pydantic Models (OpenEnv spec) ──────────────────────────────────────────
+# Data Models
 
 class SREObservation(BaseModel):
     """What the agent can see at each step."""
@@ -75,7 +72,7 @@ class ResetResult(BaseModel):
     max_steps: int
 
 
-# ─── Environment ─────────────────────────────────────────────────────────────
+# Main Environment Engine
 
 class SREEnvironment:
     """
@@ -97,7 +94,7 @@ class SREEnvironment:
         self._action_history: List[str] = []
         self._reward_history: List[float] = []
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public Methods
 
     def reset(self) -> ResetResult:
         """Initialize environment with a fresh task state."""
@@ -187,7 +184,7 @@ class SREEnvironment:
         grader = self._task_def["grader"]
         return grader(self._state, self._action_history)
 
-    # ── Internal helpers ──────────────────────────────────────────────────────
+    # Internal Helpers
 
     def _build_observation(self) -> SREObservation:
         """Build a limited observation from full state (don't expose everything)."""
@@ -281,7 +278,7 @@ class SREEnvironment:
         else:
             return "Hint: Almost there — verify all services are running after your fixes."
 
-    # ── Serialization ─────────────────────────────────────────────────────────
+    # Serialization
 
     def to_dict(self) -> Dict[str, Any]:
         return {
