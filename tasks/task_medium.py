@@ -43,7 +43,7 @@ def _grade_medium(state: dict, history: list) -> float:
     if db_fixed and secret_added and api_running:
         score += 0.35
 
-    return min(score, 1.0)
+    return max(0.001, min(score, 0.999))
 
 
 TASK_MEDIUM = {

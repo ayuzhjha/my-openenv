@@ -58,7 +58,7 @@ def _grade_hard(state: dict, history: list) -> float:
         if worker_up:
             score += 0.15
 
-    return min(score, 1.0)
+    return max(0.001, min(score, 0.999))
 
 
 TASK_HARD = {

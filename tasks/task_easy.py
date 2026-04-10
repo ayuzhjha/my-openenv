@@ -37,7 +37,7 @@ def _grade_easy(state: dict, history: list) -> float:
     if port_fixed and backend_running:
         score += 0.4
 
-    return min(score, 1.0)
+    return max(0.001, min(score, 0.999))
 
 
 TASK_EASY = {
