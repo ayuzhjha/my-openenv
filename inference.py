@@ -44,8 +44,13 @@ You interact with a simulated Linux server environment. At each step you receive
 - Result of your last action
 - List of files you can read
 
-You must respond with EXACTLY ONE action per step, in this exact format:
-  ACTION_TYPE [arguments]
+You must act using an advanced Reasoning and Acting (ReAct) strategy.
+First, explain your thought process and diagnosis.
+Second, provide EXACTLY ONE action.
+
+Format your response exactly like this:
+THOUGHT: <your reasoning and reflection here>
+ACTION: ACTION_TYPE [arguments]
 
 Available actions:
   READ_FILE <path>           - Read the contents of a file
@@ -57,19 +62,13 @@ Available actions:
   VIEW_LOGS <service>        - View logs for a service (or "all")
 
 RULES:
-- Output ONLY the action, nothing else. No explanation, no preamble.
-- Do NOT restart services that are already running and healthy.
 - Read config files before editing them.
 - After editing a config, restart the affected service.
-- One action per response — no multi-line actions.
+- One action per response.
 
-Examples of valid actions:
-  READ_FILE /etc/nginx/nginx.conf
-  VIEW_LOGS nginx
-  CHECK_SERVICE backend
-  EDIT_CONFIG backend.env PORT=8080
-  RESTART_SERVICE backend
-  RUN_SHELL netstat -tlnp
+Example response:
+THOUGHT: Nginx is returning 502 Bad Gateway. This usually indicates the upstream backend service is either down, rejecting connections, or bound to the wrong port. I need to check the backend service status first.
+ACTION: CHECK_SERVICE backend
 """
 
 
@@ -97,14 +96,14 @@ def call_server(endpoint: str, payload: Dict) -> Dict:
     return resp.json()
 
 
-def call_server_get(endpoint: str, params: Dict = None) -> Dict:
+def call_server_get(endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict:
     url = f"{SERVER_URL}{endpoint}"
     resp = requests.get(url, params=params, timeout=30)
     resp.raise_for_status()
     return resp.json()
 
 
-def get_llm_action(client: OpenAI, obs: Dict, history: List[str]) -> str:
+def get_llm_action(client: OpenAI, obs: Dict, history: List[str]) -> tuple[str, str]:
     """Ask the LLM what action to take next."""
     services = obs.get("service_statuses", {})
     logs = obs.get("recent_logs", [])
@@ -146,11 +145,22 @@ ACTION HISTORY (last 5):
             max_tokens=MAX_TOKENS,
         )
         text = (completion.choices[0].message.content or "").strip()
-        # Take only the first line (one action)
-        return text.split("\n")[0].strip() if text else "VIEW_LOGS all"
+        
+        # Parse ReAct format
+        action_line = "VIEW_LOGS all"
+        for line in text.split("\n"):
+            line = line.strip()
+            if line.startswith("ACTION:"):
+                action_line = line.replace("ACTION:", "").strip()
+                break
+            elif not line.startswith("THOUGHT:") and line.split(" ")[0] in ["READ_FILE", "LIST_DIR", "EDIT_CONFIG", "RESTART_SERVICE", "RUN_SHELL", "CHECK_SERVICE", "VIEW_LOGS"]:
+                # Fallback if it forgot ACTION: prefix
+                action_line = line
+                
+        return action_line, text
     except Exception as e:
         print(f"[DEBUG] LLM call failed: {e}", flush=True)
-        return "VIEW_LOGS all"
+        return "VIEW_LOGS all", "THOUGHT: Fallback due to error\nACTION: VIEW_LOGS all"
 
 
 # ── Main runner ───────────────────────────────────────────────────────────────
@@ -180,9 +190,9 @@ def run_task(client: OpenAI, task_id: str) -> Dict[str, Any]:
 
         # Agent loop
         for step in range(1, min(MAX_STEPS_PER_TASK, max_steps) + 1):
-            # Get LLM action
-            action = get_llm_action(client, obs, history)
-            history.append(f"Step {step}: {action}")
+            # Get LLM action (ReAct loop)
+            action, full_text = get_llm_action(client, obs, history)
+            history.append(f"Step {step}:\n{full_text}")
 
             # Execute action
             step_resp = call_server("/step", {"action": action, "session_id": session_id})
